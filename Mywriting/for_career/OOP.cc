@@ -1,33 +1,102 @@
 
-//面向对象三大特性：封装，继承，多态
+// 面向对象三大特性：封装，继承，多态
 
 /*
-封装：将数据和操作数据的方法进行有机结合，隐藏对象的属性和实现细节，仅对外公开接口来和对象进行交互。
+继承：主要有三种继承访问限定符，public,protected,private。继承的时候将基类中的内容继承到子类并且根据访问限定符的
+不通将基类中的内容的访问权限进行更改，例如如果是通过protected进行继承的，则将基类中的Public和protected的内容
+的访问权限也全部修改为protected
+*/
 
-继承的访问限定符：public,protected,private
-public:对内部类，派生类，外部类均可见
-protected:对内部类，派生类可见
-private:对内部类可见
-
-派生类对象 可以赋值给 基类的对象/基类的指针/基类的引用。这里有个形象的说法叫切片或者切割。
-寓意把派生类中父类那部分切来赋值过去。基类对象不能赋值给派生类对象
-
-派生类默认的成员函数:
-派生类的构造函数必须调用基类的构造函数初始化基类的那一部分成员。如果基类没有默认的构造函数，
-则必须在派生类构造函数的初始化列表阶段显示调用。
-
-派生类的拷贝构造函数必须调用基类的拷贝构造完成基类的拷贝初始化。
-
-派生类的operator=必须要调用基类的operator=完成基类的复制。
-
-派生类的析构函数会在被调用完成后自动调用基类的析构函数清理基类成员。
-因为这样才能保证派生类对象先清理派生类成员再清理基类成员的顺序。
-
-派生类对象初始化先调用基类构造再调派生类构造。
-
-派生类对象析构清理先调用派生类析构再调基类的析构
+#if 0
+#include <iostream>
+using namespace std;
 
 
+class Animal {
+public:
+    void eat() { std::cout << "Animal eats" << std::endl; }
+protected:
+    void sleep() { std::cout << "Animal sleeps" << std::endl; }
+private:
+    void breathe() { std::cout << "Animal breathes" << std::endl; }
+};
+
+class Dog : private Animal {
+public:
+    void bark() { 
+        std::cout << "Dog barks" << std::endl;
+        sleep(); // 可以访问基类的 protected 成员
+    }
+};
+
+int main() {
+
+    Animal an;
+    an.eat();  //从类的外部通过对象进行访问的时候只能访问public限定符下的内容
+
+    Dog dg;
+    dg.bark();  //从类的外部通过对象只能访问public限定符下的内容，所以可以访问bark方法
+    // dg.eat();   //因为是private继承，所以基类的public和protected下的内容全部变为子类private下的内容，所以不能访问
+
+    // Dog myDog;
+    // myDog.eat();  // OK, public 成员
+    // myDog.bark(); // OK, 派生类自己的成员
+    // myDog.sleep(); // Error, 在类外部不能访问 protected 成员
+    // myDog.breathe(); // Error, 不能访问 private 成员
+}
+
+#endif
+
+#if 1
+
+#include <bits/stdc++.h>
+using namespace std;
+
+class Base
+{
+public:
+    Base() : m_name("zhangpeng")
+    {
+        cout << "默认构造 Base constructor:" << m_name << endl;
+    }
+    Base(string name) : m_name(name)
+    {
+        cout << "有参构造 Base constructor:" << m_name << endl;
+    }
+    ~Base()
+    {
+        cout << "Base destructor" << endl;
+    }
+
+private:
+    string m_name;
+};
+
+class Son:public Base
+{
+public:
+    Son() : m_name("xiaofei"),Base("yangdi")
+    {
+        cout << "Son constructor:" << m_name << endl;
+    }
+    ~Son()
+    {
+        cout << "Son destructor" << endl;
+    }
+
+private:
+    string m_name;
+};
+
+int main()
+{
+   Son s1;
+   return 0;
+}
+
+#endif
+
+/*
 
 多态的概念：通俗来说，就是多种形态，具体点就是去完成某个行为，当不同的对象去完成时会产生出不同
 的状态和结果
@@ -86,8 +155,8 @@ C++ 的多态通过虚函数（virtual function） 实现，而虚函数的调�
 
 虚函数表：
 总结一下派生类的虚表生成：
-a.先将基类中的虚表内容拷贝一份到派生类虚表中 
-b.如果派生类重写了基类中某个虚函数，用派生类自己的虚函数覆盖虚表中基类的虚函数 
+a.先将基类中的虚表内容拷贝一份到派生类虚表中
+b.如果派生类重写了基类中某个虚函数，用派生类自己的虚函数覆盖虚表中基类的虚函数
 c.派生类自己新增加的虚函数按其在派生类中的声明次序增加到派生类虚表的最后。
 d.虚表指针的物理位置是属于基类的，但是它指向的是派生类的虚表
 
@@ -96,53 +165,3 @@ d.虚表指针的物理位置是属于基类的，但是它指向的是派生类
 
 
 */
-
-#if 1
-
-#include <iostream>
-using namespace std;
-
-class A {
-public:
-	virtual void vfun1() {
-		cout << "A::vfun1()" << endl;
-	}
-	virtual void vfun2() {
-		cout << "B::vfun2()" << endl;
-	}
-	void fun1();
-	void fun2();
-private:
-	int m_data1, m_data2;
-};
-
-class B :public A {
-public:
-	virtual void vfun1() {
-		cout << "调用了B的vfun1函数" << endl;
-	}
-	void fun1();
-private:
-	int m_data3;
-};
-
-class C :public B {
-public:
-	virtual void vfun2() {
-		cout << "调用了C的vfun2函数" << endl;
-	}
-	void fun2();
-private:
-	int m_data4;
-};
-
-int main() {
-	B bObkect;
-	A* p = &bObkect;
-	p->vfun1();
-	C cObject;
-	A* q = &cObject;
-	q->vfun2();
-}
-
-#endif
