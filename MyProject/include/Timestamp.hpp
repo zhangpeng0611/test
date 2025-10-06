@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 
-class Timestamp : nocopyable
+class Timestamp
 {
 public:
     Timestamp();

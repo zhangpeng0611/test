@@ -1,5 +1,6 @@
 
 #include "Logger.hpp"
+#include "Timestamp.hpp"
 
 #include <iostream>
 
@@ -33,4 +34,6 @@ void Logger::Log(std::string msg)
     default:
         break;
     }
+
+    std::cout << Timestamp::now().toString() << ":" << msg << std::endl;
 }
