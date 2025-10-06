@@ -1,6 +1,7 @@
 #include "channel.hpp"
 #include <sys/epoll.h>
 
+//
 const int channel::KNonEvent = 0;
 const int channel::KReadEvent = EPOLLIN | EPOLLPRI;
 const int channel::KWriteEvent = EPOLLOUT;
