@@ -61,6 +61,9 @@ public:
         update();
     }
 
+    int index() {return index_;}
+    void set_index(int idx) {index_=idx;}
+
     // 返回fd当前的事件状态
     bool isNoneEvent() const { return events_ == KNonEvent; }
     bool isWriting() const { return events_ & KWriteEvent; }
@@ -81,6 +84,7 @@ private:
     const int fd_;   // fd,poller监听的对象
     int events_;     // 注册fd感兴趣的事件
     int revents_;    // poller返回的具体发生的事件
+    int index_;      //用于表示channel在poller中的状态
 
     std::weak_ptr<void> tie_;
     bool tied_;
