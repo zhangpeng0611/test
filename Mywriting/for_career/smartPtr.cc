@@ -90,6 +90,7 @@ int main()
 
 #if 0
 
+
 //带有引用计数的类
 template<typename T>
 class RfCnt
