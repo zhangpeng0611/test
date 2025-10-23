@@ -551,8 +551,8 @@ Android限制“只能在 UI 线程操作 UI”，是为了避免多线程并发
 
 因为规定只能在UI线程中修改UI，那如果想让新启动的线程修改UI的属性值应该怎么办呢？
 可以通过handler类来实现，子线程想要修改Activity中的UI组件时，可以创建一个handler对象，如果通过handler
-对象来给主线程发信息，给主线程发的信息都会存入到messagequeue中，然后looper按照先入先出的顺序取出
-message，并且根据message中的what属性分发给对应的handler进行处理
+对象来给主线程发信息，给主线程发的信息都会存入到messagequeue中，需要注意的是messagequeue本质上是一个优先级单链表
+按照消息的触发时间由小到大进行排序，然后looper取出message，并且根据message中的what属性分发给对应的handler进行处理
 
 子线程更新主线程的UI的完整过程：
 public class MainActivity extends AppCompatActivity {
@@ -642,8 +642,47 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 }
+---------------------------------------------------------------------------
 
+如何在子线程对handler进行初始化，需要什么特殊的操作吗？
+在子线程中初始化 Handler 与在主线程中最大的区别是：
+子线程默认没有Looper，而Handler依赖Looper来关联消息队列（MessageQueue），因此需要手动为子线程创建Looper并启动消息循环，
+否则会抛出 Can't create handler inside thread Thread[xxx,5,main] that has not called Looper.prepare() 异常。
+1.调用 Looper.prepare()：为当前子线程创建唯一的 Looper 对象（同时会创建 MessageQueue）。
+2.创建 Handler：此时 Handler 会自动关联当前线程的 Looper（通过 Looper.myLooper() 获取）。
+3.调用 Looper.loop()：启动消息循环，让 Looper 不断从 MessageQueue 中取出消息并处理（此方法会阻塞线程，需放在最后执行）。
 
+*****
+简化方案：Android 提供了 HandlerThread 类，它是一个自带 Looper 的线程，可简化子线程 Handler 的初始化流程
+（内部已封装 Looper.prepare() 和 Looper.loop()）。
+
+// 启动一个子线程
+new Thread(() -> {
+    // 1. 为当前子线程初始化 Looper（必须第一步）
+    Looper.prepare();
+
+    // 2. 创建 Handler（此时自动关联当前线程的 Looper）
+    Handler subThreadHandler = new Handler() {
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            // 此方法在子线程中执行（非主线程，不能更新 UI）
+            Log.d("SubThreadHandler", "收到消息：" + msg.obj + "，线程名：" + Thread.currentThread().getName());
+        }
+    };
+
+    // 3. 发送消息到当前子线程的 Handler（可在当前线程或其他线程发送）
+    Message msg = Message.obtain();
+    msg.obj = "来自子线程的消息";
+    subThreadHandler.sendMessage(msg);
+
+    // 4. 启动消息循环（会阻塞当前线程，必须放在最后）
+    Looper.loop();
+
+    // 注意：Looper.loop() 之后的代码不会执行（除非调用 Looper.quit() 退出循环）
+    Log.d("SubThread", "这段代码不会被执行");
+}).start();
+
+---------------------------------------------------------------------------------
 
 怎么创建一个持续接收工作的后台线程，如何使用线程池？
 1.持续接收工作的线程需要一个任务队列和循环机制，不断从队列中获取并执行任务。
@@ -776,6 +815,41 @@ onTouchEvent(ev)：
 责任链模式：事件传递就像一条责任链。dispatchTouchEvent是链条的起点和调度员。它先问onInterceptTouchEvent是否要拦截，
 如果不拦截，就把事件传给子 View 的dispatchTouchEvent，如此递归。如果没人拦截，最终到达叶子节点View，
 由它的onTouchEvent处理。如果处理了（返回true），链条结束；如果没处理（返回false），事件会沿着链条回溯，让父节点有机会处理。
+
+
+安卓中怎么开启线程：
+// 1. 定义线程类（继承 Thread）
+class MyThread extends Thread {
+    @Override
+    public void run() {
+        // 线程执行的任务（耗时操作放在这里，如网络请求、文件读写）
+        Log.d("ThreadDemo", "子线程执行，线程名：" + Thread.currentThread().getName());
+    }
+}
+new MyThread().start(); // 必须调用 start() 方法，而非直接调用 run()（run() 会在当前线程执行）
+
+// 2. 实现 Runnable 接口（任务与线程分离，更灵活）
+class MyRunnable implements Runnable {
+    @Override
+    public void run() {
+        // 线程执行的任务
+        Log.d("ThreadDemo", "子线程执行，线程名：" + Thread.currentThread().getName());
+    }
+}
+Thread thread = new Thread(new MyRunnable());
+thread.start();
+
+intent传递复杂对象的时候应该怎么做：
+在Android 中，Intent 传递数据时，基础类型（如 int、String）可直接通过 putExtra() 传递，
+但对于复杂对象（如自定义类、集合等），需要通过序列化机制实现。常用的方式有两种：实现 Serializable接口
+或实现 Parcelable 接口
+
+
+安卓中怎么实现异步操作：
+1.Thread+Handler完成异步操作
+通过 Thread 执行耗时任务，再用 Handler 将结果切换回主线程更新 UI。
+2.RxJava 是基于事件流的响应式编程库，通过 Observable 发射事件，Observer 接收事件，支持线程切换、事件变换和链式操作，
+适合复杂异步场景（如多任务依赖、重试机制）。
 
 ANR是什么，ANR产生的根本原因是什么？
 在安卓开发中，ANR（Application Not Responding，应用无响应） 是指应用在特定时间内无法响应用户操作或系统事件，

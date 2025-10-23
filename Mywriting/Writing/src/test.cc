@@ -173,7 +173,7 @@ int main()
 
 #endif
 
-#if 1
+#if 0
 
 #include <bits/stdc++.h>
 #include <memory>
@@ -219,5 +219,29 @@ int main()
     ptr2->parent_ = ptr1;
     return 0;
 }
+
+#endif
+
+#if 1
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+void myFunc(char **p)
+{
+    *p=(char*)malloc(100);
+}
+
+int main()
+{
+    char *str=NULL;
+    myFunc(&str);
+    strcpy(str,"hello,world");
+    printf("%s\n",str);
+
+    return 0;
+}
+
 
 #endif
